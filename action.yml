@@ -1,0 +1,32 @@
+name: 'Scan SBOM Attestation'
+description: 'Scans SBOM attestation with Trivy and generates a report'
+inputs:
+  sbom-file:
+    description: 'Filename for the SBOM Attestation artifact'
+    required: true
+    type: string
+  trivy-file:
+    description: 'File in which to store Trivy scan report'
+    required: true
+    type: string
+runs:
+  using: 'composite'
+  steps:
+    - name: Download SBOM Artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: sbom-artifact
+        path: .
+
+    - name: Install Trivy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy
+
+    - name: Trivy Scan
+      run: |
+        trivy sbom --format json --output
